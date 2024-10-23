@@ -1,0 +1,20 @@
+#!/bin/bash
+
+read intf<./interface_act
+
+pkill airodump
+pkill portalrobot
+
+./unmon
+./setmon
+
+rm -rv /tmp/lst
+mkdir /tmp/lst
+echo "Escaneando APS... 20 seg">status
+airodump-ng $intf -w /tmp/lst/cap&
+sleep 20
+pkill airodump
+./unmon
+echo "Escaneo APs terminado!!!">status
+
+exit 0

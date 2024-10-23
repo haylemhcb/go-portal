@@ -1,0 +1,19 @@
+#!/bin/bash
+
+read intf<./interface_act
+
+iwconfig $intf|grep 'level'>/tmp/signal
+
+echo "<br/>">>/tmp/signal
+echo "Asociado a:">>/tmp/signal
+echo "<br/>">>/tmp/signal
+echo "<p style='font-size:10px;background:#ff0000;color:#fff;opacity:60%;padding:5px;border-radius: 8px;'>" "$(iwconfig 2>/dev/null |grep $intf  |grep 'ESSID'|cut -d':' -f2)" "</p>" >>/tmp/signal
+
+
+echo "<br/>">>/tmp/signal
+echo "Info ip/MAC actual">>/tmp/signal
+echo "<br/>">>/tmp/signal
+echo "<p style='font-size:10px;background:#000;color:#fff;opacity:60%;padding:5px;border-radius: 8px;'>" "$(ip addr show dev $intf)" "</p>" >>/tmp/signal
+
+exit 0
+

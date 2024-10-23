@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cat /tmp/lst/cap-01.kismet.netxml>lastwifis
+
+exit 0

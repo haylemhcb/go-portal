@@ -1,0 +1,16 @@
+#!/bin/bash
+
+read intf<./interface_act
+
+echo "Activando monitor...">status
+ip link set dev $intf down
+sleep 3
+
+iw dev $intf set type monitor
+sleep 3
+
+ip link set dev $intf up
+sleep 3
+echo "OK">status
+
+exit 0

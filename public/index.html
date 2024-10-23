@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>go-portal</title>
+    <style>
+
+        #status {
+          color: #fff;
+        }
+
+        dialog[open] {
+          opacity: 80%;
+          scale: 1;
+          transition: scale .3s ease-in-out;
+
+          @starting-style {
+            opacity: 0%;
+            scale: 0;
+          }
+        }
+
+        dialog {
+          transition: scale .3s ease, display .3s ease allow-discrete;
+          scale: 0;
+        }
+
+        #btns { display: flex; }
+
+        h1, h2,h3 { color: midnightblue; }
+
+        #divtext {
+            width: 100%; /* Ancho del div */
+            background: linear-gradient(to right, #f6d6a8, #f8c8d0);
+            display: block;
+            justify-content: center;
+            align-items: center;
+            color: white; /* Color del texto */
+            border-radius: 10px; /* Bordes redondeados */
+            padding: 5px;
+            margin-top: 5px;
+            opacity: 50%;
+        }
+
+        img {
+          padding: 20px;
+          opacity: 60%;
+          border-radius: 20px;
+        }
+
+        input {
+            width: 50%;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            border-color: #007AFF; /* Color azul de iPhone */
+            box-shadow: 0 0 5px rgba(0, 122, 255, 0.5);
+            outline: none; /* Eliminar el contorno predeterminado */
+        }
+
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Dos columnas de igual tamaño */
+            gap: 20px; /* Espacio entre columnas */
+            padding: 20px;
+        }
+        .grid-item {
+            border: 1px solid #ccc; /* Borde para los elementos */
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button, select {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #007BFF; /* Color de fondo del botón */
+            color: white; /* Color del texto del botón */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        button:hover {
+            background-color: #0056b3; /* Color de fondo al pasar el mouse */
+        }
+
+        button {
+          padding: 10px;
+        }
+
+        body {
+          background: url("back.jpg");
+          background-size: cover;
+          color: #fff;
+          font-weight: 500px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="divtext">
+  <h1>Go-Portal</h1>
+  <h2>Hackea portales cautivos de Hoteles y aeropuertos</h2>
+  <h3>Creado por Haylem Candelario Bauza</h3>
+</div>
+
+<audio id="sonar" src="sonar.ogg" loop></audio>
+<div class="grid-container">
+    <div class="grid-item">
+        <h1 id="status">Estado ---</h1>
+        <h6 id="status2">Nivel señal captura ---</h6>
+        <details>
+            <summary>Configuraciones</summary>
+            <p>Seleccione la interfaz de red a utilizar.</p>
+            <select id="interfacesSelect">
+              <option value="">Cargando...</option>
+            </select>
+            <p>Rate o sensibilidad de la wifi recomendados 1M, 2M, 5.5M.</p>
+            <input id="rate" type="text" placeholder="rate de la wifi" value="1M">
+            <p>Nombre de la wifi a hackear.</p>
+            <input id="ssid" type="text" placeholder="SSID de la wifi" value="WIFI_COHIBA">
+            <p>MAC del AP donde anclar la wifi.</p>
+            <input id="iap" type="text" placeholder="BSSID" value="70:FD:45:E2:EC:80">
+            <p>Canal donde opera el AP.</p>
+            <input id="ichannel" type="text" placeholder="Canal de conexiones" value="6">
+            <p>MAC usada para restaurar luego la interfaz wifi, puede ser la original o una falsa.</p>
+            <input id="ifakemac" type="text" placeholder="MAC falsa" value="00:0c:43:a1:80:91">
+
+        </details>
+    </div>
+    <div class="grid-item">
+       <div id="btns">
+        <button id="accionButton">Guardar config.</button>
+        <button id="start">Comenzar hackeo.</button>
+        <button id="stop">Detener hackeo.</button>
+        <button id="lstopn">Listar redes abiertas.</button>
+       </div>
+        <h4 id="signal">Señal actual: 0</h4>
+        <img src="radar.gif" id="im1" style="display: none;"></img>
+    </div>
+</div>
+
+<dialog id="dlg">
+  <h4 id="msglist">Listado wifis abiertas</h4>
+  <textarea cols="80" rows="24" id="wlst">---</textarea>
+  <form method="dialog">
+    <button id="bok">Cerrar</button>
+  </form>
+</dialog>
+
+
+<script>
+        // Función para obtener las interfaces de red
+        async function fetchInterfaces() {
+            try {
+                const response = await fetch('/interfaces');
+                if (!response.ok) {
+                    throw new Error('Error en la red');
+                }
+                const data = await response.text(); // Obtener el texto plano
+                const interfaces = data.split('\n'); // Dividir por líneas
+
+                // Obtener el elemento select
+                const select = document.getElementById('interfacesSelect');
+                select.innerHTML = ''; // Limpiar opciones existentes
+
+                // Agregar las opciones al select
+                interfaces.forEach(interface => {
+                    if (interface) { // Asegurarse de que no esté vacío
+                        const option = document.createElement('option');
+                        option.value = interface;
+                        option.textContent = interface;
+                        select.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error('Error al obtener las interfaces:', error);
+            }
+        }
+
+
+    // Función para enviar datos
+        async function sendSelectedInterface() {
+            const select = document.getElementById('interfacesSelect');
+            const crate = document.getElementById('rate');
+            const cssid = document.getElementById('ssid');
+            const cap = document.getElementById('iap');
+            const cchannel = document.getElementById('ichannel');
+            const cfakemac = document.getElementById('ifakemac');
+
+            const selectedInterface = select.value;
+            const rate = crate.value;
+            const ssid = cssid.value;
+            const ap = cap.value;
+            const channel = cchannel.value;
+            const fakemac = cfakemac.value;
+
+
+            if (!selectedInterface) {
+                alert("Por favor, selecciona una interfaz.");
+                return;
+            }
+
+
+            const data = {
+                interface: selectedInterface,
+                rate: rate,
+                ssid: ssid,
+                ap: ap,
+                channel: channel,
+                fakemac: fakemac
+            };
+
+
+            try {
+                const response = await fetch('/save-interface', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al guardar la interfaz');
+                }
+
+                alert("Datos guardados exitosamente.");
+            } catch (error) {
+                alert("No se ha podido enviar la informacion.");
+            }
+        }
+
+        async function startHack() {
+          const im1 = document.getElementById('im1');
+          const status = document.getElementById('status');
+          const sonar = document.getElementById('sonar');
+
+          sonar.src="sonar.ogg";
+
+
+          const response = fetch('/start', {
+                  method: 'PUT',
+              });
+
+
+          im1.style.display="block";
+          status.innerHTML = "Hackeando...";;
+          sonar.play();
+        }
+
+
+        async function stopHack() {
+          const status = document.getElementById('status');
+          const im1 = document.getElementById('im1');
+          const sonar = document.getElementById('sonar');
+
+          const response = await fetch('/stop', {
+                  method: 'PUT',
+              });
+
+
+               status.innerHTML = "Detenido!!!";;
+               im1.style.display="none";
+               sonar.pause();
+        }
+
+
+        async function readStatus() {
+            const status = document.getElementById('status');
+            const response = await fetch('/status');
+            const sonar = document.getElementById('sonar');
+            const im1 = document.getElementById('im1');
+
+            if (!response.ok) {
+                throw new Error('Error en la red');
+            }
+            const data = await response.text(); // Obtener el texto plano
+
+            status.innerHTML = data;
+            if(status.innerHTML.trim() == "MAC aplicada!!!" ) {
+              sonar.pause();
+              sonar.src="ok.ogg";
+              sonar.play();
+              sonar.pause();
+              im1.style.display="none";
+              status.innerHTML = "Perfecto!!!";
+            }
+
+        }
+
+
+        async function readSignal() {
+            const signal = document.getElementById('signal');
+            const response = await fetch('/signal');
+
+            if (!response.ok) {
+                throw new Error('Error en la red');
+            }
+            const data = await response.text(); // Obtener el texto plano
+            signal.innerHTML = "Señal: " + data;
+        }
+
+
+        async function readSignal2() {
+            const signal2 = document.getElementById('status2');
+            const response = await fetch('/scap');
+
+            if (!response.ok) {
+                throw new Error('Error en la red');
+            }
+            const data = await response.text(); // Obtener el texto plano
+            signal2.innerHTML = "Señal capturador: " + data;
+        }
+
+
+        async function lstwopen() {
+            const dlg = document.getElementById('dlg');
+            const wlst = document.getElementById('wlst');
+
+            const response1 = await fetch('/lstwopen'); // Escanear
+            const response2 = await fetch('/lstwifisopen'); // Contenido
+            const data = await response2.text(); // Obtener el texto plano
+
+            wlst.value = data;
+
+            dlg.showModal();
+
+        }
+
+        // Llamar a la función al cargar la página
+        window.onload = fetchInterfaces;
+        document.getElementById('accionButton').addEventListener('click', sendSelectedInterface);
+        document.getElementById('start').addEventListener('click', startHack);
+        document.getElementById('stop').addEventListener('click', stopHack);
+        document.getElementById('lstopn').addEventListener('click', lstwopen);
+        setInterval(readStatus, 2000);
+        setInterval(readSignal, 5000);
+        setInterval(readSignal2, 5000);
+        
+    </script>
+
+</body>
+</html>

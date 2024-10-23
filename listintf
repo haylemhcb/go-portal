@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Listar las interfaces de red
+ip -o link show | awk -F': ' '{print $2}'

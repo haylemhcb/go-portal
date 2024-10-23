@@ -1,0 +1,10 @@
+#!/bin/bash
+
+read intf<./interface_act
+
+rm /tmp/scap
+cat /tmp/robotcap/cap-01.csv |grep 'OPN'>/tmp/scap
+
+
+
+exit 0
